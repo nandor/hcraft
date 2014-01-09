@@ -1,4 +1,4 @@
-hplanet
+hcraft
 =======
 
-Procedural planetary renderer written in Haskell and OpenGL 4.3
+Warning: mixing haskell with 3d graphics may cause a global calamity
