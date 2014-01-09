@@ -1,0 +1,18 @@
+-- Cabal file for HCraft
+name:                hcraft
+version:             0.0.1
+synopsis:            Planetary renderer
+license:             MIT
+license-file:        LICENSE
+author:              Nandor Licker
+maintainer:          licker.nandor@gmail.com
+copyright:           (C) 2013 Nandor Licker
+category:            Game
+build-type:          Simple
+cabal-version:       >=1.8
+
+executable hcraft
+  main-is:           Main.hs
+  build-depends:     base<5, transformers, bytestring, containers, GLFW, OpenGL, OpenGLRaw, monad-loops, mtl, filepath, random, vector
+  extra-libraries:   png
+  ghc-options:
