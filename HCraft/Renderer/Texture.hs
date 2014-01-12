@@ -56,7 +56,7 @@ buildTexture TexDesc{..} = do
         texImage2D Texture2D NoProxy lvl tdFmt (TextureSize2D w h) 0 pix
         return tdFmt
 
-      when (length fmts <= 0 || any (/= fmts !! 0) fmts) $
+      when (length fmts <= 0 || any (/= head fmts) fmts) $
         fail $ "Invalid sources '" ++ tdName ++ "'"
 
       when (aniso > 0.0) $
@@ -132,7 +132,7 @@ updateTextures = do
     let pixData = PixelData RGBA UnsignedByte nullPtr
         size = TextureSize2D nw nh
 
-    when (osize /= nsize) $ do
+    when (osize /= nsize) $
       get esTextures >>= \x -> forM_ x $ \tex@TexObject{..} ->
         when toResize $ case toTarget of
           Tex2D -> do
@@ -141,5 +141,5 @@ updateTextures = do
           Tex2DRect -> do
             textureBinding TextureRectangle $= Just toHandle
             texImage2D TextureRectangle NoProxy 0 toFmt size 0 pixData
-          _ -> do
+          _ ->
             fail "Cannot resize texture"

@@ -38,9 +38,7 @@ compile file = do
   status <- liftIO $ do
     source <- BS.readFile file
 
-    if BS.null source
-      then shaderSourceBS shader $= ""
-      else shaderSourceBS shader $= source
+    shaderSourceBS shader $= if BS.null source then "" else source
 
     compileShader shader
     get $ compileStatus shader
@@ -54,7 +52,7 @@ compile file = do
 -- | Links multiple shader files into a program
 buildProgram :: ProgDesc -> Engine ()
 buildProgram ProgDesc{..} = do
-  prog <- liftIO $ createProgram
+  prog <- liftIO createProgram
   shaders <- mapM compile pdSources
 
   -- Link the shader
@@ -74,7 +72,7 @@ buildProgram ProgDesc{..} = do
   -- Report possible errors
   unless status $ do
     log <- liftIO . get $ programInfoLog prog
-    fail $ "(" ++ (concat . intersperse "," $ pdSources) ++ ") error: " ++ log
+    fail $ "(" ++ intercalate "," pdSources ++ ") error: " ++ log
 
   -- Check uniforms
   unifs <- liftIO $ do
@@ -119,7 +117,7 @@ parameter :: Uniform a => String -> a -> Engine ()
 parameter name val = do
   EngineState{..} <- ask
   liftIO $ get esProgram >>= \x -> case x of
-    Nothing -> fail $ "No program bound"
+    Nothing -> fail "No program bound"
     Just ProgObject{..}  ->
       case Map.lookup name poUniforms of
         Nothing -> return ()
@@ -131,7 +129,7 @@ parameterv :: String -> Mat4 GLfloat -> Engine ()
 parameterv name val = do
   EngineState {..} <- ask
   liftIO $ get esProgram >>= \x -> case x of
-    Nothing -> fail $ "No program bound"
+    Nothing -> fail "No program bound"
     Just ProgObject{..}  ->
       case Map.lookup name poUniforms of
         Nothing -> return ()

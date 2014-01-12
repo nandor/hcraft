@@ -100,7 +100,7 @@ readPNG path = liftIO $ do
   file <- liftIO $ withCString path $ \path' ->
     withCString "rb" $ \mode -> do
       file <- fopen path' mode
-      when (file == nullPtr) $ do
+      when (file == nullPtr) $
         fail $ "Cannot open file '" ++ path ++ "'"
       return file
 
@@ -116,7 +116,7 @@ readPNG path = liftIO $ do
       fail "Invalid signature"
 
   -- Create the png read struct
-  png <- withCString "1.2.49" $ \ver -> do
+  png <- withCString "1.2.49" $ \ver ->
     pngCreateReadStruct ver nullPtr nullFunPtr nullFunPtr
   when (ptrPNG png == nullPtr) $ do
      fclose file
@@ -156,7 +156,7 @@ readPNG path = liftIO $ do
 
   -- Convert transparency to an alpha channel
   hasTrns <- pngGetValid png info 0x0010
-  when (hasTrns /= 0) $ do
+  when (hasTrns /= 0) $
     pngSetStrip16 png
 
   pngReadUpdateInfo png info

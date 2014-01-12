@@ -148,11 +148,11 @@ instance Floating a => Matrix a Mat4 where
   mfroml [ a00, a01, a02, a03 , a10, a11, a12, a13
          , a20, a21, a22, a23 , a30, a31, a32, a33
          ]
-    = (Mat4 (Vec4 a00 a01 a02 a03) (Vec4 a10 a11 a12 a13)
-            (Vec4 a20 a21 a22 a23) (Vec4 a30 a31 a32 a33))
+    = Mat4 (Vec4 a00 a01 a02 a03) (Vec4 a10 a11 a12 a13)
+           (Vec4 a20 a21 a22 a23) (Vec4 a30 a31 a32 a33)
 
   lfromm (Mat4 x y z w)
-    = lfromv x ++ lfromv y ++ lfromv z ++ (lfromv w)
+    = lfromv x ++ lfromv y ++ lfromv z ++ lfromv w
 
 -- |Allow multiplication of 3D vectors with 4x4 matrices
 instance Floating a => MatrixMultiplier Vec3 a where

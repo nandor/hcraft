@@ -5,7 +5,6 @@
 
 layout (location = 0) out vec4 out_color;
 
-uniform sampler2D u_random;
 uniform sampler2D u_diffuse;
 
 in vec4 v_pos;
@@ -14,5 +13,5 @@ in vec2 v_st;
 
 void main( )
 {
-	out_color = vec4(v_st, 0.0, 0.0);
+	out_color = texture2D(u_diffuse, v_st);
 }

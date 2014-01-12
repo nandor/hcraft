@@ -53,7 +53,7 @@ updateCamera dt = do
 
   -- Sum up active directions
   dirs' <- forM (zip [ UP, DOWN, LEFT, RIGHT ] dirs) $
-    \( key, dir ) -> do
+    \( key, dir ) ->
       liftIO $ getKey key >>= \status -> return $ case status of
         Press -> dir
         Release -> Vec3 0 0 0
@@ -71,7 +71,7 @@ updateCamera dt = do
       { cPosition = pos'
       , cRotation = Vec3 rx' ry' rz'
       , cDirection = dir
-      , cProjMat = mat4Persp (pi / 4) aspect 0.1 100.0
+      , cProjMat = mat4Persp (pi / 4) aspect cNearPlane cFarPlane
       , cViewMat = mat4LookAt pos' (pos' ^+^ dir) (Vec3 0 1 0)
       , cSkyMat = mat4LookAt vzero dir (Vec3 0 1 0)
       , cAspect = aspect

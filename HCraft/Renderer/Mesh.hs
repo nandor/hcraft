@@ -16,7 +16,7 @@ import           HCraft.Renderer.Mesh.Mesh as Mesh
 import           HCraft.Renderer.Mesh.OBJ as Mesh
 import           HCraft.Engine
 
--- | Builds a mesh from a source array
+-- |Builds a mesh from a source array
 buildMesh :: MeshDesc -> Engine ()
 buildMesh MeshDesc{..} = do
   -- Retrieve mesh data
@@ -39,7 +39,7 @@ buildMesh MeshDesc{..} = do
 
       vertexAttribArray (AttribLocation 0) $= Enabled
       vertexAttribPointer (AttribLocation 0) $=
-        ( ToFloat, VertexArrayDescriptor 3 Float 32 (intPtrToPtr 0 ) )
+        ( ToFloat, VertexArrayDescriptor 3 Float 32 (intPtrToPtr 0) )
 
       vertexAttribArray (AttribLocation 1) $= Enabled
       vertexAttribPointer (AttribLocation 1) $=
@@ -53,10 +53,11 @@ buildMesh MeshDesc{..} = do
 
   EngineState{..} <- ask
   liftIO $ get esMeshes >>= \cache ->
-    let obj = MeshObject vao vbo len
+    let obj = MeshObject vao vbo len mdType
     in esMeshes $= Map.insert mdName obj cache
 
--- | Renders a mesh from the cache
+
+-- |Renders a mesh from the cache
 renderMesh :: String -> Engine ()
 renderMesh name = do
   EngineState{..} <- ask
@@ -65,4 +66,4 @@ renderMesh name = do
     Nothing -> fail $ "Mesh not found '" ++ name ++ "'"
     Just MeshObject{..} -> do
       bindVertexArrayObject $= Just moVAO
-      drawArrays Triangles 0 (fromIntegral moLength)
+      drawArrays moType 0 (fromIntegral moLength)

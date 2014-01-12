@@ -34,7 +34,7 @@ main = do
                                           , cFarPlane = 1000.0
                                           }
                        <*> newIORef Map.empty
-                       <*> newIORef 0
+                       <*> newIORef Nothing
 
   status <- runReaderT (runErrorT . run $ engine) state
 

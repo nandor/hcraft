@@ -16,6 +16,7 @@ import           HCraft.Math
 import           HCraft.Renderer
 import           HCraft.World.Camera
 import           HCraft.World.Chunk
+import           HCraft.World.Cursor
 
 create :: Engine ()
 create = do
@@ -49,6 +50,8 @@ create = do
   liftIO $ do
     depthFunc $= Just Lequal
     cullFace $= Just Back
+    frontFace $= CCW
+    blendFunc $= ( SrcAlpha, OneMinusSrcAlpha )
 
     [ dfrFBO, shadowFBO, fxFBO ] <- genObjectNames 3
 
@@ -62,7 +65,9 @@ loop = do
   EngineState{..} <- ask
 
   -- Keep track of time
-  lastFrame <- liftIO $ (get time >>= newIORef)
+  lastFrame <- liftIO $ get time >>= newIORef
+  leftButton <- liftIO $ newIORef Release
+  rightButton <- liftIO $ newIORef Release
 
   -- We need to quit at some point...
   liftIO $ windowCloseCallback $= do
@@ -78,13 +83,29 @@ loop = do
       lastFrame $= currentFrame
       return (realToFrac $ currentFrame - time)
 
+    -- Check mouse input
+    leftButton' <- liftIO $ getMouseButton ButtonLeft
+    (liftIO $ get leftButton) >>= \btn ->
+      when (btn == Press && leftButton' == Release) $
+        deleteBlock
+
+    rightButton' <- liftIO $ getMouseButton ButtonRight
+    (liftIO $ get rightButton) >>= \btn ->
+      when (btn == Press && rightButton' == Release) $
+        placeBlock
+
+    liftIO $ leftButton $= leftButton'
+    liftIO $ rightButton $= rightButton'
+
     -- Update stuff
     updateCamera dt
     updateTextures
+    updateCursor
 
     -- Render stuff
     renderSky
     renderChunks (Vec3 0 4 0)
+    renderCursor
     renderEntitities
 
     liftIO $ do

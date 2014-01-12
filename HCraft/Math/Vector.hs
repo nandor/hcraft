@@ -4,6 +4,8 @@
 --------------------------------------------------------------------------------
 module HCraft.Math.Vector where
 
+import Control.Applicative
+
 -- Vector typeclass
 infix 7 ^.^, ^*^, ^*., .*^, ^/.
 infix 6 ^+^, ^-^
@@ -99,6 +101,13 @@ instance Floating a => Vector a Vec3 where
 instance Functor Vec3 where
   fmap f (Vec3 x y z)
     = Vec3 (f x) (f y) (f z)
+
+instance Applicative Vec3 where
+  pure x
+    = Vec3 x x x
+
+  Vec3 f g h <*> Vec3 x y z
+    = Vec3 (f x) (g y) (h z)
 
 -- |4D Vector
 data Vec4 a

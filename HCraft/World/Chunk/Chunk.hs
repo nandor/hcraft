@@ -8,14 +8,15 @@ import           HCraft.World.Chunk.Block
 
 data ChunkMesh
   = ChunkMesh{ cmVAO    :: VertexArrayObject
-             , cmVBO    :: BufferObject
+             , cmIBO    :: BufferObject
              , cmLength :: GLint
              }
 
 data Chunk
   = Chunk{ chMesh     :: IORef (Maybe ChunkMesh)
          , chVisible  :: IORef (Maybe QueryObject)
-         , chData     :: IOVector Block
+         , chDirty    :: IORef Bool
+         , chBlocks   :: IOVector Block
          , chPosition :: Vec3 GLint
          , chModel    :: Mat4 GLfloat
          }

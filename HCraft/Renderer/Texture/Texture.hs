@@ -64,18 +64,21 @@ textureBuiltin
     , TexDesc "random" Tex2D RGBA' False TexNormal
       [ Right $ TexSource 64 64 RGBA (randomList (64 * 64 * 4))
       ]
+    , TexDesc "cursor" Tex2D RGBA' False TexNormal
+      [ Left "texture/cursor.png"
+      ]
     , TexDesc "sky" TexCubeMap RGBA' False TexBilinear
-      [ Left $ "texture/sky_xn.png"
-      , Left $ "texture/sky_xp.png"
-      , Left $ "texture/sky_yn.png"
-      , Left $ "texture/sky_yp.png"
-      , Left $ "texture/sky_zn.png"
-      , Left $ "texture/sky_zp.png"
+      [ Left "texture/sky_xn.png"
+      , Left "texture/sky_xp.png"
+      , Left "texture/sky_yn.png"
+      , Left "texture/sky_yp.png"
+      , Left "texture/sky_zn.png"
+      , Left "texture/sky_zp.png"
       ]
     ]
 
 -- |Generate a random list for a texture
 randomList :: Int -> [ Word8 ]
 randomList n
-  = fst $ runState (replicateM n (state random)) (mkStdGen 0)
+  = evalState (replicateM n (state random)) (mkStdGen 0)
 

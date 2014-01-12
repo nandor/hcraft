@@ -15,4 +15,4 @@ executable hcraft
   main-is:           Main.hs
   build-depends:     base<5, transformers, bytestring, containers, GLFW, OpenGL, OpenGLRaw, monad-loops, mtl, filepath, random, vector
   extra-libraries:   png
-  ghc-options:
+  ghc-options:       -O2

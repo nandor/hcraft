@@ -33,7 +33,7 @@ data EngineState
                 , esShadowFBO  :: IORef (Maybe FramebufferObject)
                 , esCamera     :: IORef Camera
                 , esChunks     :: IORef (Map (Vec3 GLint) (IORef Chunk))
-                , esCounter    :: IORef Int
+                , esCursor     :: IORef (Maybe ( Vec3 Int, Vec3 Int ))
                 }
 
 -- |Engine monad stack
