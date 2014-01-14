@@ -34,6 +34,7 @@ data EngineState
                 , esCamera     :: IORef Camera
                 , esChunks     :: IORef (Map (Vec3 GLint) (IORef Chunk))
                 , esCursor     :: IORef (Maybe ( Vec3 Int, Vec3 Int ))
+                , esCount      :: IORef Int
                 }
 
 -- |Engine monad stack

@@ -35,6 +35,7 @@ main = do
                                           }
                        <*> newIORef Map.empty
                        <*> newIORef Nothing
+                       <*> newIORef 0
 
   status <- runReaderT (runErrorT . run $ engine) state
 

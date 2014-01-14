@@ -44,8 +44,8 @@ renderChunks (Vec3 x y z) = do
   camera@Camera{..} <- liftIO $ get esCamera
 
   let volume = getCameraVolume camera
-      boxMin = Vec3 (x - 2) 0 (z - 2)
-      boxMax = Vec3 (x + 2) 1 (z + 2)
+      boxMin = Vec3 (x - 0) 0 (z - 0)
+      boxMax = Vec3 (x + 8) 1 (z + 8)
 
   -- Retrieve all the chunks which are inside the view
   -- volume & are inside the view range

@@ -36,9 +36,20 @@ coords :: (Enum a, Num a) => [ ( a, a, a ) ]
 coords
   = [( x, y, z ) | x <- [0..15], y <- [0..15], z <- [0..15]]
 
+-- |Index of neighbours
+others :: Vec3 GLint -> [ Vec3 GLint ]
+others (Vec3 x y z)
+  = [ Vec3 (x + 0) (y + 0) (z + 1)
+    , Vec3 (x + 0) (y + 0) (z - 1)
+    , Vec3 (x + 1) (y + 0) (z + 0)
+    , Vec3 (x - 1) (y + 0) (z + 0)
+    , Vec3 (x + 0) (y - 1) (z + 0)
+    , Vec3 (x + 0) (y + 1) (z + 0)
+    ]
+
 -- |Creates a new chunk or retrieves it from the cache
 getChunk :: Vec3 GLint -> Engine Chunk
-getChunk pos = do
+getChunk pos@(Vec3 cx cy cz) = do
   EngineState{..} <- ask
   chunks <- liftIO $ get esChunks
 
@@ -57,11 +68,9 @@ getChunk pos = do
 
       -- Fill in the chunk with random data
       forM_ coords $ \( x, y, z) -> do
-        rnd <- liftIO $ randomIO :: IO Int
-        block <- if rnd `mod` 4 /= 0
-                  then return Empty
-                  else return Stone
-        liftIO $ Vector.write (chBlocks chunk) (((x * 16) + y) * 16 + z) block
+        let block = noiseGetBlock (cx * 16 + x) (cy * 16 + y) (cz * 16 + z)
+            idx = fromIntegral $ ((x * 16) + y) * 16 + z
+        liftIO $ Vector.write (chBlocks chunk) idx block
 
       ref <- newIORef chunk
       esChunks $= Map.insert pos ref chunks
@@ -71,13 +80,24 @@ getChunk pos = do
 -- |Builds the mesh for a chunk
 buildChunk :: Chunk -> Engine [ GLuint ]
 buildChunk Chunk{..} = do
-  arr <- forM [(pt, f) | pt <- coords, f <- [0..5]] $ \( ( x, y, z ), f ) -> do
-    let idx  = (x * 16 + y) * 16 + z
-        mesh = (idx * 6 + f) * 4
-    block <- liftIO $ Vector.read chBlocks idx
-    return $ if block /= Empty
-              then map (\i -> fromIntegral (mesh + i)) [0, 1, 2, 2, 1, 3]
-              else []
+  let Vec3 cx cy cz = (*16) <$> chPosition
+  arr <- forM coords $ \( x, y, z ) -> do
+    let idx = (x * 16 + y) * 16 + z
+        pos = Vec3 (cx + x) (cy + y) (cz + z)
+
+    -- Check whether the block is visible
+    block <- liftIO $ Vector.read chBlocks (fromIntegral idx)
+    case block of
+      Empty -> return []
+      _ -> do
+        -- Cull faces if neighbours occlude them
+        mesh <- forM (zip (others pos) [0..5]) $ \( pos' , f ) -> do
+          let mesh = (idx * 6 + f) * 4
+          block <- getBlock pos'
+          return $ case block of
+            Nothing -> map (\i -> fromIntegral (mesh + i)) [0, 1, 2, 2, 1, 3]
+            Just block -> []
+        return (concat mesh)
   return (concat arr)
 
 -- |Renders a chunk
@@ -181,7 +201,7 @@ occludeChunk Chunk{..} = do
   liftIO $ endQuery AnySamplesPassed
 
 -- |Retrieves a block
-getBlock :: Vec3 Int -> Engine (Maybe Block)
+getBlock :: Vec3 GLint -> Engine (Maybe Block)
 getBlock pos = do
   EngineState{..} <- ask
   chunks <- liftIO $ get esChunks
