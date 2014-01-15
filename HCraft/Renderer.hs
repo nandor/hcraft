@@ -51,6 +51,9 @@ renderChunks (Vec3 x y z) = do
   -- volume & are inside the view range
   chunks <- selectChunks volume boxMin boxMax
 
+  -- The number of new chunks built each second is limited
+  liftIO $ esCount $= 0
+
   -- Render all the visible chunks
   -- Chunks which are definitely invisible (a previous occlusion query on them
   -- failed) are not rendered.

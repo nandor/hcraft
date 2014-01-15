@@ -22,7 +22,7 @@ main = do
                        <*> newIORef Nothing
                        <*> newIORef Nothing
                        <*> newIORef Nothing
-                       <*> newIORef Camera{ cPosition = Vec3 0.0 0.0 0.0
+                       <*> newIORef Camera{ cPosition = Vec3 (-10.0) 0.0 0.0
                                           , cRotation = Vec3 0.0 0.0 0.0
                                           , cDirection = Vec3 0.0 0.0 1.0
                                           , cProjMat = mident

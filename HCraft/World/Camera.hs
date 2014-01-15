@@ -10,11 +10,42 @@ import Control.Monad
 import Control.Monad.Error
 import Control.Monad.Reader
 import Data.Bits
+import Data.List
 import Graphics.UI.GLFW
 import Graphics.Rendering.OpenGL hiding (Plane)
 import HCraft.Engine
 import HCraft.Math
+import HCraft.World.Chunk
 import HCraft.World.Camera.Camera
+
+checkCollision :: Vec3 GLfloat -> Vec3 GLfloat -> Engine (Vec3 GLfloat)
+checkCollision pos@(Vec3 x y z) dir@(Vec3 dx dy dz) = do
+  let xp = x + dx + 0.5 > fromIntegral (ceiling x)
+      yp = y + dy + 0.5 > fromIntegral (ceiling y)
+      zp = z + dz + 0.5 > fromIntegral (ceiling z)
+      xn = x + dx - 0.5 < fromIntegral (floor x)
+      yn = y + dy - 0.5 < fromIntegral (floor y)
+      zn = z + dz - 0.5 < fromIntegral (floor z)
+
+      Vec3 x' y' z' = floor <$> pos
+
+      cond = [ ( xp, Vec3 (-1.0) 0.0 0.0, Vec3 (x' + 1) y' z' )
+             , ( xn, Vec3 1.0 0.0 0.0,    Vec3 (x' - 1) y' z' )
+             , ( zp, Vec3 0.0 0.0 (-1.0), Vec3 x' y' (z' + 1) )
+             , ( zn, Vec3 0.0 0.0 1.0,    Vec3 x' y' (z' - 1) )
+             , ( yp, Vec3 0.0 (-1.0) 0.0, Vec3 x' (y' + 1) z' )
+             , ( yn, Vec3 0.0 1.0 0.0,    Vec3 x' (y' - 1) z' )
+             ]
+
+      test dir ( cond, norm, block )
+        | not cond = return dir
+        | otherwise = do
+          block <- getBlock block
+          case block of
+            Nothing -> return dir
+            Just _ -> return (dir ^-^ (norm ^*. (norm ^.^ dir)))
+
+  (pos ^+^) <$> foldM test dir cond
 
 updateCamera :: GLfloat -> Engine ()
 updateCamera dt = do
@@ -60,19 +91,20 @@ updateCamera dt = do
 
   let moveDir = foldr1 (^+^) dirs'
       moveDir' = if vlen moveDir < 0.1
-                    then Vec3 0 0 0
-                    else moveDir ^/. vlen moveDir
-      pos' = cPosition ^+^ moveDir' ^*. 0.3
+                        then Vec3 0 0 0
+                        else (moveDir ^/. vlen moveDir) ^*. 0.3
+
+  pos <- checkCollision cPosition moveDir'
 
   -- Compute new orientation
   liftIO $ do
     mousePos $= Position (w `shiftR` 1) (h `shiftR` 1)
     esCamera $= camera
-      { cPosition = pos'
+      { cPosition = pos
       , cRotation = Vec3 rx' ry' rz'
       , cDirection = dir
       , cProjMat = mat4Persp (pi / 4) aspect cNearPlane cFarPlane
-      , cViewMat = mat4LookAt pos' (pos' ^+^ dir) (Vec3 0 1 0)
+      , cViewMat = mat4LookAt pos (pos ^+^ dir) (Vec3 0 1 0)
       , cSkyMat = mat4LookAt vzero dir (Vec3 0 1 0)
       , cAspect = aspect
       }

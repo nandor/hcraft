@@ -36,7 +36,7 @@ perm
   where
     fix i
       = abs i `mod` 256
-    perm' = evalState (replicateM 256 (state random)) (mkStdGen 0)
+    perm' = evalState (replicateM 256 (state random)) (mkStdGen 1)
 
 -- |Permutation table mod 8
 permMod12 :: Vector Int
@@ -124,5 +124,5 @@ noiseGetBlock x y z
   where
     noise = simplexNoise x' y' z'
     x' = fromIntegral x / 20
-    y' = fromIntegral y / 20
+    y' = fromIntegral y / 40
     z' = fromIntegral z / 20

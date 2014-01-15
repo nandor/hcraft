@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards, NamedFieldPuns #-}
 module HCraft.World.Chunk
   ( module Chunk
+  , neighbours
   , getChunk
   , buildChunk
   , renderChunk
@@ -37,8 +38,8 @@ coords
   = [( x, y, z ) | x <- [0..15], y <- [0..15], z <- [0..15]]
 
 -- |Index of neighbours
-others :: Vec3 GLint -> [ Vec3 GLint ]
-others (Vec3 x y z)
+neighbours :: Num a => Vec3 a -> [ Vec3 a ]
+neighbours (Vec3 x y z)
   = [ Vec3 (x + 0) (y + 0) (z + 1)
     , Vec3 (x + 0) (y + 0) (z - 1)
     , Vec3 (x + 1) (y + 0) (z + 0)
@@ -91,7 +92,7 @@ buildChunk Chunk{..} = do
       Empty -> return []
       _ -> do
         -- Cull faces if neighbours occlude them
-        mesh <- forM (zip (others pos) [0..5]) $ \( pos' , f ) -> do
+        mesh <- forM (zip (neighbours pos) [0..5]) $ \( pos' , f ) -> do
           let mesh = (idx * 6 + f) * 4
           block <- getBlock pos'
           return $ case block of
@@ -143,46 +144,49 @@ renderChunk chunk@Chunk{..} = do
       Just ChunkMesh{..} -> liftIO $ do
         bindVertexArrayObject $= Just cmVAO
         drawElements Triangles (fromIntegral cmLength) UnsignedInt nullPtr
+        endConditionalRender
       Nothing -> do
-        vao <- liftIO genObjectName
-        ibo <- liftIO genObjectName
+        count <- liftIO $ get esCount
+        when (count < 2) $ do
+          liftIO $ esCount $~! (+1)
+          vao <- liftIO genObjectName
+          ibo <- liftIO genObjectName
 
-        -- Vertex data
-        liftIO $ do
-          bindVertexArrayObject $= Just vao
-          get esMeshes >>= \cache -> case Map.lookup "chunkMesh" cache of
-            Nothing -> fail "Mesh not found 'chunkMesh'"
-            Just MeshObject{..} ->
-              bindBuffer ArrayBuffer $= Just moVBO
+          -- Vertex data
+          liftIO $ do
+            bindVertexArrayObject $= Just vao
+            get esMeshes >>= \cache -> case Map.lookup "chunkMesh" cache of
+              Nothing -> fail "Mesh not found 'chunkMesh'"
+              Just MeshObject{..} ->
+                bindBuffer ArrayBuffer $= Just moVBO
 
-          vertexAttribArray (AttribLocation 0) $= Enabled
-          vertexAttribPointer (AttribLocation 0) $=
-            ( ToFloat, VertexArrayDescriptor 3 Float 32 (intPtrToPtr 0 ) )
+            vertexAttribArray (AttribLocation 0) $= Enabled
+            vertexAttribPointer (AttribLocation 0) $=
+              ( ToFloat, VertexArrayDescriptor 3 Float 32 (intPtrToPtr 0 ) )
 
-          vertexAttribArray (AttribLocation 1) $= Enabled
-          vertexAttribPointer (AttribLocation 1) $=
-            ( ToFloat, VertexArrayDescriptor 3 Float 32 (intPtrToPtr 12) )
+            vertexAttribArray (AttribLocation 1) $= Enabled
+            vertexAttribPointer (AttribLocation 1) $=
+              ( ToFloat, VertexArrayDescriptor 3 Float 32 (intPtrToPtr 12) )
 
-          vertexAttribArray (AttribLocation 2) $= Enabled
-          vertexAttribPointer (AttribLocation 2) $=
-            ( ToFloat, VertexArrayDescriptor 2 Float 32 (intPtrToPtr 24) )
+            vertexAttribArray (AttribLocation 2) $= Enabled
+            vertexAttribPointer (AttribLocation 2) $=
+              ( ToFloat, VertexArrayDescriptor 2 Float 32 (intPtrToPtr 24) )
 
-        indices <- buildChunk chunk
+          indices <- buildChunk chunk
 
-        -- Index data
-        liftIO $ do
-          bindBuffer ElementArrayBuffer $= Just ibo
+          -- Index data
+          liftIO $ do
+            bindBuffer ElementArrayBuffer $= Just ibo
 
-          len <- withArrayLen indices $ \len ptr -> do
-            let len' = fromIntegral len
-            bufferData ElementArrayBuffer $= ( len' * 4, ptr, StreamDraw )
-            return (fromIntegral len)
+            len <- withArrayLen indices $ \len ptr -> do
+              let len' = fromIntegral len
+              bufferData ElementArrayBuffer $= ( len' * 4, ptr, StreamDraw )
+              return (fromIntegral len)
 
-          chMesh $= Just (ChunkMesh vao ibo len)
-          drawElements Triangles len UnsignedInt nullPtr
+            chMesh $= Just (ChunkMesh vao ibo len)
+            drawElements Triangles len UnsignedInt nullPtr
+            endConditionalRender
 
-    unless inCamera . liftIO $
-      endConditionalRender
 
 -- |Perform an occlusion query on the chunk
 occludeChunk :: Chunk -> Engine ()
