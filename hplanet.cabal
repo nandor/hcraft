@@ -13,6 +13,6 @@ cabal-version:       >=1.8
 
 executable hcraft
   main-is:           Main.hs
-  build-depends:     base<5, transformers, bytestring, containers, GLFW, OpenGL, OpenGLRaw, monad-loops, mtl, filepath, random, vector
+  build-depends:     base<5, transformers, bytestring, containers, GLFW, OpenGL, OpenGLRaw, monad-loops, mtl, filepath, random, vector, StateVar
   extra-libraries:   png
   ghc-options:       -O2

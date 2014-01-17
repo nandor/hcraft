@@ -33,8 +33,8 @@ progBuiltin
     , ProgDesc "depth" [ "shader/depth.vs"
                        , "shader/depth.fs"
                        ]
-    , ProgDesc "dof" [ "shader/dof.cs"
-                     ]
+--  , ProgDesc "dof" [ "shader/dof.cs"
+--                   ]
     ]
 
 -- |Builtin attribute locations

@@ -17,6 +17,7 @@ data Chunk
          , chVisible  :: IORef (Maybe QueryObject)
          , chDirty    :: IORef Bool
          , chBlocks   :: IOVector Block
+         , chBlockTex :: TextureObject
          , chPosition :: Vec3 GLint
          , chModel    :: Mat4 GLfloat
          }

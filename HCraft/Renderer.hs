@@ -14,6 +14,8 @@ import           Data.IORef
 import qualified Data.Map as Map
 import qualified Data.Vector.Mutable as Vector
 import           Graphics.Rendering.OpenGL
+import           Graphics.UI.GLFW
+import           GHC.Float
 import           HCraft.Engine
 import           HCraft.Math
 import           HCraft.Renderer.Mesh as Renderer
@@ -54,11 +56,12 @@ renderChunks (Vec3 x y z) = do
   -- The number of new chunks built each second is limited
   liftIO $ esCount $= 0
 
+  time' <- liftIO $ get time
+
   -- Render all the visible chunks
   -- Chunks which are definitely invisible (a previous occlusion query on them
   -- failed) are not rendered.
   bindProgram "terrain"
-  bindTexture 1 "random" "u_diffuse"
   parameterv "u_proj" cProjMat
   parameterv "u_view" cViewMat
   mapM_ renderChunk chunks

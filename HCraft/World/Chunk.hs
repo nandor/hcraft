@@ -31,6 +31,7 @@ import           HCraft.Engine
 import           HCraft.Math
 import           HCraft.Renderer.Program
 import           HCraft.Renderer.Mesh
+import           HCraft.Renderer.Texture
 
 -- |Array containing the coordinates of all the cubes
 coords :: (Enum a, Num a) => [ ( a, a, a ) ]
@@ -60,18 +61,33 @@ getChunk pos@(Vec3 cx cy cz) = do
       -- They are built when the chunk is first rendered. Lazy initialization
       -- is used because when building meshes for chunks data from neighbours
       -- might be required, but we do not want their meshes to be built yet
+      vec <- Vector.new (16 * 16 * 16)
+      tex <- genObjectName
+
+      -- Fill in the chunk with random data
+      vec' <- forM coords $ \( x, y, z) -> do
+        let block = noiseGetBlock (cx * 16 + x) (cy * 16 + y) (cz * 16 + z)
+            idx = fromIntegral $ ((x * 16) + y) * 16 + z
+        liftIO $ Vector.write vec idx block
+        return block
+
+      -- Create the texture
+      textureBinding Texture3D $= Just tex
+      textureFilter Texture3D $= ( ( Nearest, Nothing ), Nearest )
+      textureWrapMode Texture3D S $= ( Repeated, ClampToEdge )
+      textureWrapMode Texture3D T $= ( Repeated, ClampToEdge )
+      withArray vec' $ \ptr -> do
+        let pxdata = PixelData RedInteger UnsignedInt ptr
+        texImage3D Texture3D NoProxy 0 R32UI (TextureSize3D 16 16 16) 0 pxdata
+
+      -- Add the chunk to the cache
       chunk <- Chunk <$> newIORef Nothing
                      <*> newIORef Nothing
                      <*> newIORef True
-                     <*> Vector.new (16 * 16 * 16)
+                     <*> pure vec
+                     <*> pure tex
                      <*> pure pos
                      <*> pure (mat4Trans $ (*16) . fromIntegral <$> pos)
-
-      -- Fill in the chunk with random data
-      forM_ coords $ \( x, y, z) -> do
-        let block = noiseGetBlock (cx * 16 + x) (cy * 16 + y) (cz * 16 + z)
-            idx = fromIntegral $ ((x * 16) + y) * 16 + z
-        liftIO $ Vector.write (chBlocks chunk) idx block
 
       ref <- newIORef chunk
       esChunks $= Map.insert pos ref chunks
@@ -139,6 +155,11 @@ renderChunk chunk@Chunk{..} = do
       beginConditionalRender (fromJust query) QueryWait
 
     parameterv "u_mdl" chModel
+    parameter "u_blocks" (TextureUnit 1)
+
+    liftIO $ do
+      activeTexture $= (TextureUnit 1)
+      textureBinding Texture3D $= Just chBlockTex
 
     case mesh of
       Just ChunkMesh{..} -> liftIO $ do
@@ -239,12 +260,20 @@ placeBlock = do
         cpos = fromIntegral . fst <$> cdiv
         Vec3 x y z = snd <$> cdiv
         idx = fromIntegral $ (x * 16 + y) * 16 + z
+        tpos = TexturePosition3D z y x
+        tsize = TextureSize3D 1 1 1
 
     case Map.lookup cpos chunks of
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref
-        Vector.write chBlocks idx Stone
+        Vector.write chBlocks idx Dirt
+
+        textureBinding Texture3D $= Just chBlockTex
+        withArray [Dirt] $ \ptr -> do
+          let pxData = (PixelData RedInteger UnsignedInt ptr)
+          texSubImage3D Texture3D 0 tpos tsize pxData
+
         chDirty $= True
 
 -- |Deletes the block selected by the cursor
@@ -258,14 +287,22 @@ deleteBlock = do
     let Just ( pos, dir ) = cursor
         cdiv = (`divMod` 16) <$> pos
         cpos = fromIntegral . fst <$> cdiv
-        Vec3 x y z = snd <$> cdiv
+        Vec3 x y z = fromIntegral . snd <$> cdiv
         idx = fromIntegral $ (x * 16 + y) * 16 + z
+        tsize = TextureSize3D 1 1 1
+        tpos = TexturePosition3D z y x
 
     case Map.lookup cpos chunks of
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref
         Vector.write chBlocks idx Empty
+
+        textureBinding Texture3D $= Just chBlockTex
+        withArray [Empty] $ \ptr -> do
+          let pxData = (PixelData RedInteger UnsignedInt ptr)
+          texSubImage3D Texture3D 0 tpos tsize pxData
+
         chDirty $= True
 
 -- |Deletes a chunk

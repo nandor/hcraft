@@ -12,12 +12,12 @@ import           Control.Monad
 import           Control.Monad.Reader
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.List
 import           Foreign
 import           Graphics.Rendering.OpenGL
-import           Graphics.Rendering.OpenGL.Raw.Core31
+import           Graphics.Rendering.OpenGL.Raw
 import           System.FilePath
 import           HCraft.Engine
 import           HCraft.Math
