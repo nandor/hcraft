@@ -12,6 +12,7 @@ data TexTarget
   | Tex2DArray
   | Tex2DShadow
   | TexCubeMap
+  | TexCubeMapArray
   | TexBuffer
   deriving ( Eq, Ord, Show )
 
@@ -74,6 +75,20 @@ textureBuiltin
       , Left "texture/sky_yp.png"
       , Left "texture/sky_zn.png"
       , Left "texture/sky_zp.png"
+      ]
+    , TexDesc "blocks" TexCubeMapArray RGBA' False TexBilinear
+      [ Left "texture/grass_xn.png"
+      , Left "texture/grass_xp.png"
+      , Left "texture/grass_yn.png"
+      , Left "texture/grass_yp.png"
+      , Left "texture/grass_zn.png"
+      , Left "texture/grass_zp.png"
+      , Left "texture/stone_xn.png"
+      , Left "texture/stone_xp.png"
+      , Left "texture/stone_yn.png"
+      , Left "texture/stone_yp.png"
+      , Left "texture/stone_zn.png"
+      , Left "texture/stone_zp.png"
       ]
     ]
 

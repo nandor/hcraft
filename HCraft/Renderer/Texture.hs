@@ -44,6 +44,12 @@ buildTexture TexDesc{..} = do
        TexTrilinear -> ( ( ( Linear', Just Linear' ), Linear' ), 0.0 )
        TexAnisotropic x -> ( ( ( Linear', Just Linear' ), Linear' ), x )
 
+  -- List of cubemap faces
+  let faces = [ TextureCubeMapNegativeX, TextureCubeMapPositiveX
+              , TextureCubeMapNegativeY, TextureCubeMapPositiveY
+              , TextureCubeMapNegativeZ, TextureCubeMapPositiveZ
+              ]
+
   -- Build the texture
   format <- case tdType of
     Tex2D -> liftIO $ do
@@ -77,19 +83,27 @@ buildTexture TexDesc{..} = do
     TexCubeMap -> liftIO $ do
       textureBinding TextureCubeMap $= Just tex
       textureFilter TextureCubeMap $= texFilter
-      textureWrapMode TextureCubeMap S $= ( Repeated, ClampToEdge )
-      textureWrapMode TextureCubeMap T $= ( Repeated, ClampToEdge )
 
       when (length sources < 6) $
         fail "Not enough images for a cube map"
 
-      let faces = [ TextureCubeMapNegativeX, TextureCubeMapPositiveX
-                  , TextureCubeMapNegativeY, TextureCubeMapPositiveY
-                  , TextureCubeMapNegativeZ, TextureCubeMapPositiveZ
-                  ]
-
       forM_ (zip sources faces) $ \( ( w, h, pix ), face ) ->
         texImage2D face NoProxy 0 tdFmt (TextureSize2D w h) 0 pix
+    TexCubeMapArray -> liftIO $ do
+      textureBinding TextureCubeMapArray $= Just tex
+      textureFilter TextureCubeMapArray $= texFilter
+
+      let len = fromIntegral $ length sources
+      when (len < 6 || len `mod` 6 /= 0) $
+        fail "Invalid cube map array"
+
+      let ( w, h, _ ) = head sources
+          p = PixelData RGBA UnsignedByte nullPtr
+      texImage3D TextureCubeMapArray NoProxy 0 RGBA' (TextureSize3D w h len) 0 p
+      forM_ (zip sources [0..]) $ \( ( w, h, pix ), idx ) -> do
+        let pos = TexturePosition3D 0 0 idx
+            size = TextureSize3D w h 1
+        texSubImage3D TextureCubeMapArray 0 pos size pix
 
   -- Free temporary memory
   forM_ sources $ \( _, _, PixelData _ _ ptr) ->
@@ -115,10 +129,10 @@ bindTexture idx name unif = do
       activeTexture $= unit
 
       case toTarget of
-        Tex2D      -> textureBinding Texture2D $= Just toHandle
-        Tex2DRect  -> textureBinding TextureRectangle $= Just toHandle
+        Tex2D -> textureBinding Texture2D $= Just toHandle
+        Tex2DRect -> textureBinding TextureRectangle $= Just toHandle
         TexCubeMap -> textureBinding TextureCubeMap $= Just toHandle
-
+        TexCubeMapArray -> textureBinding TextureCubeMapArray $= Just toHandle
   parameter unif unit
 
 -- |Resizes all the textures which have the resize flag set

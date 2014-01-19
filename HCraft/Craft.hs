@@ -29,7 +29,7 @@ create = do
     openWindowHint OpenGLProfile       OpenGLCoreProfile
     openWindowHint OpenGLForwardCompat True
     openWindowHint OpenGLVersionMajor  4
-    openWindowHint OpenGLVersionMinor  2
+    openWindowHint OpenGLVersionMinor  1
 
     size <- get esSize
     ret <- openWindow size [ DisplayAlphaBits 8 ] Window
