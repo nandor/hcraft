@@ -11,7 +11,9 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Data.IORef
+import           Data.List
 import qualified Data.Map as Map
+import           Data.Maybe
 import qualified Data.Vector.Mutable as Vector
 import           Graphics.Rendering.OpenGL
 import           Graphics.UI.GLFW
@@ -39,9 +41,21 @@ renderSky = do
 
   liftIO $ clear [ DepthBuffer ]
 
+-- |Orders chunks, placing the ones which are closer to the player first
+orderChunks :: Vec3 GLint -> [ Chunk ] -> [ Chunk ]
+orderChunks o
+  = sortBy pred
+  where
+    o' = fromIntegral <$> o
+    pred Chunk{ chPosition = v } Chunk{ chPosition = v' }
+      = d `compare` d'
+      where
+        d = vlen $ (fromIntegral <$> v) ^-^ o'
+        d' = vlen $ (fromIntegral <$> v') ^-^ o'
+
 -- |Renders chunks
 renderChunks :: Vec3 GLint -> Engine ()
-renderChunks (Vec3 x y z) = do
+renderChunks pos@(Vec3 x y z) = do
   EngineState{..} <- ask
   camera@Camera{..} <- liftIO $ get esCamera
 
@@ -49,14 +63,12 @@ renderChunks (Vec3 x y z) = do
       boxMin = Vec3 (x - 0) 0 (z - 0)
       boxMax = Vec3 (x + 8) 1 (z + 8)
 
-  -- Retrieve all the chunks which are inside the view
-  -- volume & are inside the view range
-  chunks <- selectChunks volume boxMin boxMax
-
   -- The number of new chunks built each second is limited
   liftIO $ esCount $= 0
 
-  time' <- liftIO $ get time
+  -- Retrieve all the chunks which are inside the view
+  -- volume & are inside the view range
+  chunks <- orderChunks pos <$> selectChunks volume boxMin boxMax
 
   -- Render all the visible chunks
   -- Chunks which are definitely invisible (a previous occlusion query on them
@@ -89,7 +101,9 @@ selectChunks :: Frustum -> Vec3 GLint -> Vec3 GLint -> Engine [ Chunk ]
 selectChunks f v0@(Vec3 x0 y0 z0) v1@(Vec3 x1 y1 z1)
   | v0 == v1 = do
     chunk <- getChunk v0
-    return [ chunk ]
+    case chunk of
+      Nothing -> return []
+      Just x -> return [x]
   | otherwise = do
     -- The current box must be split along x, y and z only if the width on
     -- the given axis is larger than zero. If the two coordinates do not
