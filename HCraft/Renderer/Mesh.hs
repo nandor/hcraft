@@ -12,6 +12,7 @@ import qualified Data.Map as Map
 import           Foreign
 import           Graphics.Rendering.OpenGL
 import           System.FilePath
+import           System.IO
 import           HCraft.Renderer.Mesh.Mesh as Mesh
 import           HCraft.Renderer.Mesh.OBJ as Mesh
 import           HCraft.Engine
@@ -22,9 +23,12 @@ buildMesh MeshDesc{..} = do
   -- Retrieve mesh data
   MeshSource{..} <- case mdSource of
     Right src -> return src
-    Left file -> case takeExtension file of
-      ".o" -> readObj file
-      _ -> fail $ "Cannot load '" ++ file ++ "'"
+    Left file -> join . liftIO $ do
+      objFileHandle <- openFile file ReadMode
+      fileSrc <- hGetContents objFileHandle
+      case takeExtension file of
+        ".o" -> return $ readObj fileSrc
+        _ -> return . fail $ "Cannot load '" ++ file ++ "'"
 
   -- Build the mesh
   ( vao, vbo, len ) <- liftIO $ do
