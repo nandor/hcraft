@@ -62,8 +62,8 @@ updateCamera dt = do
 
   -- Compute new parameters
   let aspect = fromIntegral w / fromIntegral h
-      dx = fromIntegral (my - (h `shiftR` 1)) * dt
-      dy = fromIntegral (mx - (w `shiftR` 1)) * dt
+      dx = fromIntegral (my - (h `shiftR` 1)) * (dt * 0.2)
+      dy = fromIntegral (mx - (w `shiftR` 1)) * (dt * 0.2)
       rx' = max (min (rx + dx) (pi / 2 - abs dx)) (-pi / 2 + abs dx)
       ry' = ry - dy
       rz' = rz
