@@ -83,7 +83,7 @@ updateCamera dt = do
               ]
 
   -- Sum up active directions
-  dirs' <- forM (zip [ UP, DOWN, LEFT, RIGHT ] dirs) $
+  dirs' <- forM (zip [ CharKey 'W', CharKey 'S', CharKey 'A', CharKey 'D' ] dirs) $
     \( key, dir ) ->
       liftIO $ getKey key >>= \status -> return $ case status of
         Press -> dir
