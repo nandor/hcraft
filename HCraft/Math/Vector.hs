@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, BangPatterns #-}
 --------------------------------------------------------------------------------
 -- 3D and 4D vectors
 --------------------------------------------------------------------------------
@@ -50,9 +50,9 @@ class Vector a v where
 
 -- |3D Vector
 data Vec3 a
-  = Vec3 { v3x :: a
-         , v3y :: a
-         , v3z :: a
+  = Vec3 { v3x :: !a
+         , v3y :: !a
+         , v3z :: !a
          }
   deriving ( Eq, Ord, Show )
 
@@ -111,10 +111,10 @@ instance Applicative Vec3 where
 
 -- |4D Vector
 data Vec4 a
-  = Vec4 { v4x :: a
-         , v4y :: a
-         , v4z :: a
-         , v4w :: a
+  = Vec4 { v4x :: !a
+         , v4y :: !a
+         , v4z :: !a
+         , v4w :: !a
          }
   deriving ( Eq, Ord, Show )
 
