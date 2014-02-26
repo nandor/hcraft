@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, BangPatterns #-}
 --------------------------------------------------------------------------------
 -- 3x3 and 4x4 matrices
 --------------------------------------------------------------------------------
@@ -37,18 +37,18 @@ class MatrixMultiplier a b where
 
 -- |3D Matrix
 data Mat3 a
-  = Mat3 { m3x :: Vec3 a
-         , m3y :: Vec3 a
-         , m3z :: Vec3 a
+  = Mat3 { m3x :: !(Vec3 a)
+         , m3y :: !(Vec3 a)
+         , m3z :: !(Vec3 a)
          }
   deriving ( Eq, Show )
 
 -- |4D Matrix
 data Mat4 a
-  = Mat4 { m4x :: Vec4 a
-         , m4y :: Vec4 a
-         , m4z :: Vec4 a
-         , m4w :: Vec4 a
+  = Mat4 { m4x :: !(Vec4 a)
+         , m4y :: !(Vec4 a)
+         , m4z :: !(Vec4 a)
+         , m4w :: !(Vec4 a)
          }
   deriving ( Eq, Show )
 
