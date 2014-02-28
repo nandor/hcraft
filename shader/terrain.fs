@@ -25,7 +25,7 @@ void main( )
   // Get the position of the block
   grid = v_mpos.zyx + 0.00001;
   grid -= max(vec3(0.0), ceil(v_normal.zyx));
-  grid = floor(mod(grid + 16, 16));
+  grid = floor(mod(grid + 32, 32));
 
   // The layer is read from the texture which specifies block types
   stpl.w = float(texelFetch(u_blocks, ivec3(grid), 0).r) - 1.0;

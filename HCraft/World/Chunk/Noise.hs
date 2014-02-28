@@ -8,7 +8,6 @@ import qualified Data.Vector as Vector
 import           Debug.Trace
 import           Graphics.Rendering.OpenGL
 import           System.Random
-import           HCraft.World.Chunk.Block
 import           HCraft.Engine
 
 -- |Gradient vectors
@@ -117,10 +116,10 @@ simplexNoise xin yin zin
       = x * x' + y * y' + z * z'
 
 -- |Decides which block to place based on a given noise value
-noiseGetBlock :: GLint -> GLint -> GLint -> Block
+noiseGetBlock :: GLint -> GLint -> GLint -> Int
 noiseGetBlock x y z
-  | noise < 0.5 = Empty
-  | otherwise = Stone
+  | noise < 0.5 = 0
+  | otherwise = 1
   where
     noise = simplexNoise x' y' z'
     x' = fromIntegral x / 20

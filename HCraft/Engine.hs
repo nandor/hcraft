@@ -32,6 +32,7 @@ data EngineState
                 , esFxFBO      :: IORef (Maybe FramebufferObject)
                 , esShadowFBO  :: IORef (Maybe FramebufferObject)
                 , esCamera     :: IORef Camera
+                -- | Chunk Map. Keys: bottom left front corners of chunk bounding box in global chunk space
                 , esChunks     :: IORef (Map (Vec3 GLint) (IORef Chunk))
                 , esCursor     :: IORef (Maybe ( Vec3 Int, Vec3 Int ))
                 , esCount      :: IORef Int

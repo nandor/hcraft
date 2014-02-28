@@ -27,4 +27,4 @@ executable hcraft
                      , vector         >= 0.10
                      , StateVar       >= 1.0
   extra-libraries:   png
-  ghc-options:       -O2 -funbox-strict-fields
+  ghc-options:       -O2 -funbox-strict-fields -rtsopts

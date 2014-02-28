@@ -59,9 +59,9 @@ updateCursor = do
       trace pos'@(Vec3 x y z) t@(Vec3 tx ty tz) dir
         | vlen (pos' ^-^ pos) > 6 = return Nothing
         | otherwise = do
-          let chunk = (`div` 16) . floor <$> pos'
-              Vec3 x' y' z' = (`mod` 16) . floor <$> pos'
-              idx = (x' * 16 + y') * 16 + z'
+          let chunk = (`div` chunkSize) . floor <$> pos'
+              Vec3 x' y' z' = (`mod` chunkSize) . floor <$> pos'
+              idx = (x' * chunkSize + y') * chunkSize + z'
 
           block <- getBlock (floor <$> pos')
           case block of

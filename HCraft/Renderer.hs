@@ -61,7 +61,7 @@ renderChunks pos@(Vec3 x y z) = do
 
   let volume = getCameraVolume camera
       boxMin = Vec3 (x - 0) 0 (z - 0)
-      boxMax = Vec3 (x + 8) 1 (z + 8)
+      boxMax = Vec3 (x + 4) 4 (z + 4)
 
   -- The number of new chunks built each second is limited
   liftIO $ esCount $= 0
@@ -123,8 +123,8 @@ selectChunks f v0@(Vec3 x0 y0 z0) v1@(Vec3 x1 y1 z1)
 
     -- If a box is inside the view volume, we recurse
     chunks <- forM divs $ \( v0, v1 ) -> do
-      let v0' = (*16) . fromIntegral <$> v0
-          v1' = (*16) . (+1) . fromIntegral <$> v1
+      let v0' = (*chunkSize) . fromIntegral <$> v0
+          v1' = (*chunkSize) . (+1) . fromIntegral <$> v1
 
       if outsideBox f (Box v0' v1')
           then return []

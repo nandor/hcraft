@@ -24,7 +24,6 @@ import           Debug.Trace
 import           Foreign
 import           Graphics.Rendering.OpenGL
 import           System.Random
-import           HCraft.World.Chunk.Block as Chunk
 import           HCraft.World.Chunk.Chunk as Chunk
 import           HCraft.World.Chunk.Noise as Chunk
 import           HCraft.Engine
@@ -34,9 +33,10 @@ import           HCraft.Renderer.Mesh
 import           HCraft.Renderer.Texture
 
 -- |Array containing the coordinates of all the cubes
-coords :: (Enum a, Num a) => [ ( a, a, a ) ]
+coords :: (Enum a, Num a) => [ Vec3 a ]
 coords
-  = [( x, y, z ) | x <- [0..15], y <- [0..15], z <- [0..15]]
+  = let range = [0..chunkSize - 1]
+    in [ Vec3 x y z | x <- range, y <- range, z <- range]
 
 -- |Index of neighbours
 neighbours :: Num a => Vec3 a -> [ Vec3 a ]
@@ -66,13 +66,13 @@ getChunk pos@(Vec3 cx cy cz) = do
           -- They are built when the chunk is first rendered. Lazy initialization
           -- is used because when building meshes for chunks data from neighbours
           -- might be required, but we do not want their meshes to be built yet
-          vec <- Vector.new (16 * 16 * 16)
+          vec <- Vector.new (chunkSize * chunkSize * chunkSize)
           tex <- genObjectName
 
           -- Fill in the chunk with random data
-          vec' <- forM coords $ \( x, y, z) -> do
-            let block = noiseGetBlock (cx * 16 + x) (cy * 16 + y) (cz * 16 + z)
-                idx = fromIntegral $ ((x * 16) + y) * 16 + z
+          vec' <- forM coords $ \(Vec3 x y z) -> do
+            let block = 1 -- noiseGetBlock (cx * chunkSize + x) (cy * chunkSize + y) (cz * chunkSize + z)
+                idx = fromIntegral $ ((x * chunkSize) + y) * chunkSize + z
             liftIO $ Vector.write vec idx block
             return block
 
@@ -83,7 +83,7 @@ getChunk pos@(Vec3 cx cy cz) = do
           textureWrapMode Texture3D T $= ( Repeated, ClampToEdge )
           withArray vec' $ \ptr -> do
             let pxdata = PixelData RedInteger UnsignedInt ptr
-            texImage3D Texture3D NoProxy 0 R32UI (TextureSize3D 16 16 16) 0 pxdata
+            texImage3D Texture3D NoProxy 0 R32UI (TextureSize3D chunkSize chunkSize chunkSize) 0 pxdata
 
           -- Add the chunk to the cache
           chunk <- Chunk <$> newIORef Nothing
@@ -92,7 +92,7 @@ getChunk pos@(Vec3 cx cy cz) = do
                          <*> pure vec
                          <*> pure tex
                          <*> pure pos
-                         <*> pure (mat4Trans $ (*16) . fromIntegral <$> pos)
+                         <*> pure (mat4Trans $ (*chunkSize) . fromIntegral <$> pos)
 
           ref <- newIORef chunk
           esChunks $= Map.insert pos ref chunks
@@ -105,18 +105,18 @@ getChunk pos@(Vec3 cx cy cz) = do
 -- |Builds the mesh for a chunk
 buildChunk :: Chunk -> Engine [ GLuint ]
 buildChunk Chunk{..} = do
-  let Vec3 cx cy cz = (*16) <$> chPosition
-  arr <- forM coords $ \( x, y, z ) -> do
-    let idx = (x * 16 + y) * 16 + z
+  let Vec3 cx cy cz = (*chunkSize) <$> chPosition
+  arr <- {-# SCC "block_loop" #-} forM coords $ \(Vec3 x y z ) -> do -- coord of each block in the chunk
+    let idx = (x * chunkSize + y) * chunkSize + z
         pos = Vec3 (cx + x) (cy + y) (cz + z)
 
     -- Check whether the block is visible
     block <- liftIO $ Vector.read chBlocks (fromIntegral idx)
     case block of
-      Empty -> return []
+      0 -> return []
       _ -> do
         -- Cull faces if neighbours occlude them
-        mesh <- forM (zip (neighbours pos) [0..5]) $ \( pos' , f ) -> do
+        mesh <- {-# SCC "neighbour_loop" #-} forM (zip (neighbours pos) [0..5]) $ \( pos' , f ) -> do
           let mesh = (idx * 6 + f) * 4
           block <- getBlock pos'
           return $ case block of
@@ -132,7 +132,7 @@ renderChunk chunk@Chunk{..} = do
 
   -- If a chunk intersects the camera, the occlusion query is disabled
   inCamera <- liftIO (get esCamera) >>= \Camera{..} ->
-    let pos = (fromIntegral . floor . (/16) <$> cPosition)
+    let pos = (fromIntegral . floor . (/chunkSize) <$> cPosition)
         Vec3 x y z = pos ^-^ (fromIntegral <$> chPosition)
     in return $ (x + y + z) <= 2
 
@@ -231,15 +231,15 @@ occludeChunk Chunk{..} = do
   liftIO $ endQuery AnySamplesPassed
 
 -- |Retrieves a block
-getBlock :: Vec3 GLint -> Engine (Maybe Block)
+getBlock :: Vec3 GLint -> Engine (Maybe Int)
 getBlock pos = do
   EngineState{..} <- ask
   chunks <- liftIO $ get esChunks
 
-  let cdiv = (`divMod` 16) <$> pos
+  let cdiv = (`divMod` chunkSize) <$> pos
       cpos = fromIntegral . fst <$> cdiv
       Vec3 x y z = snd <$> cdiv
-      idx = fromIntegral $ (x * 16 + y) * 16 + z
+      idx = fromIntegral $ (x * chunkSize + y) * chunkSize + z
 
   case Map.lookup cpos chunks of
     Nothing -> return Nothing
@@ -247,7 +247,7 @@ getBlock pos = do
       Chunk{..} <- liftIO $ get ref
       block <- liftIO $ Vector.read chBlocks idx
       return $ case block of
-        Empty -> Nothing
+        0 -> Nothing
         x -> Just x
 
 -- |Places a block on the cursor
@@ -261,10 +261,10 @@ placeBlock = do
     let Just ( pos, dir ) = cursor
         pos' = fromIntegral <$> pos
         dir' = fromIntegral <$> dir
-        cdiv = (`divMod` 16) . floor <$> (pos' ^+^ dir')
+        cdiv = (`divMod` chunkSize) . floor <$> (pos' ^+^ dir')
         cpos = fromIntegral . fst <$> cdiv
         Vec3 x y z = snd <$> cdiv
-        idx = fromIntegral $ (x * 16 + y) * 16 + z
+        idx = fromIntegral $ (x * chunkSize + y) * chunkSize + z
         tpos = TexturePosition3D z y x
         tsize = TextureSize3D 1 1 1
 
@@ -272,10 +272,10 @@ placeBlock = do
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref
-        Vector.write chBlocks idx Dirt
+        Vector.write chBlocks idx 2
 
         textureBinding Texture3D $= Just chBlockTex
-        withArray [Dirt] $ \ptr -> do
+        withArray [2 :: Int ] $ \ptr -> do
           let pxData = (PixelData RedInteger UnsignedInt ptr)
           texSubImage3D Texture3D 0 tpos tsize pxData
 
@@ -290,10 +290,10 @@ deleteBlock = do
 
   when (isJust cursor) $ do
     let Just ( pos, dir ) = cursor
-        cdiv = (`divMod` 16) <$> pos
+        cdiv = (`divMod` chunkSize) <$> pos
         cpos = fromIntegral . fst <$> cdiv
         Vec3 x y z = fromIntegral . snd <$> cdiv
-        idx = fromIntegral $ (x * 16 + y) * 16 + z
+        idx = fromIntegral $ (x * chunkSize + y) * chunkSize + z
         tsize = TextureSize3D 1 1 1
         tpos = TexturePosition3D z y x
 
@@ -301,10 +301,10 @@ deleteBlock = do
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref
-        Vector.write chBlocks idx Empty
+        Vector.write chBlocks idx 0
 
         textureBinding Texture3D $= Just chBlockTex
-        withArray [Empty] $ \ptr -> do
+        withArray [0 :: Int] $ \ptr -> do
           let pxData = (PixelData RedInteger UnsignedInt ptr)
           texSubImage3D Texture3D 0 tpos tsize pxData
 
