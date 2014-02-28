@@ -4,7 +4,7 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Data.IORef
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Vector.Mutable as Vector
 import           Graphics.Rendering.OpenGL
 import           HCraft.Craft
@@ -15,9 +15,9 @@ main :: IO ()
 main = do
   state <- EngineState <$> newIORef True
                        <*> newIORef (Size 800 600)
-                       <*> newIORef Map.empty
-                       <*> newIORef Map.empty
-                       <*> newIORef Map.empty
+                       <*> newIORef HashMap.empty
+                       <*> newIORef HashMap.empty
+                       <*> newIORef HashMap.empty
                        <*> newIORef Nothing
                        <*> newIORef Nothing
                        <*> newIORef Nothing
@@ -33,7 +33,7 @@ main = do
                                           , cNearPlane = 0.1
                                           , cFarPlane = 1000.0
                                           }
-                       <*> newIORef Map.empty
+                       <*> newIORef HashMap.empty
                        <*> newIORef Nothing
                        <*> newIORef 0
 

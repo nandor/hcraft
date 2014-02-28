@@ -1,10 +1,13 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, BangPatterns #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, BangPatterns, DeriveGeneric #-}
 --------------------------------------------------------------------------------
 -- 3D and 4D vectors
 --------------------------------------------------------------------------------
 module HCraft.Math.Vector where
 
 import Control.Applicative
+import Data.Hashable
+import GHC.Generics
+import Graphics.Rendering.OpenGL
 
 -- Vector typeclass
 infix 7 ^.^, ^*^, ^*., .*^, ^/.
@@ -54,7 +57,7 @@ data Vec3 a
          , v3y :: !a
          , v3z :: !a
          }
-  deriving ( Eq, Ord, Show )
+  deriving ( Eq, Ord, Show, Generic )
 
 instance Floating a => Vector a Vec3 where
   (Vec3 ax ay az) ^*^ (Vec3 bx by bz)
@@ -108,6 +111,8 @@ instance Applicative Vec3 where
 
   Vec3 f g h <*> Vec3 x y z
     = Vec3 (f x) (g y) (h z)
+
+instance Hashable a => Hashable (Vec3 a)
 
 -- |4D Vector
 data Vec4 a

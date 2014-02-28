@@ -1,7 +1,7 @@
 module HCraft.World.Chunk.Chunk where
 
 import           Data.IORef
-import           Data.Vector.Mutable (IOVector)
+import           Data.Vector.Storable.Mutable (IOVector)
 import           Graphics.Rendering.OpenGL
 import           HCraft.Math
 

@@ -77,7 +77,7 @@ loop = do
   -- Main loop
   whileM_ (liftIO . get $ esRunning) $ do
     -- Compute how many seconds were spent rendering the last frame
-    dt <- liftIO $ do
+    dt <- {-# SCC "timer" #-} liftIO $ do
       currentFrame <- get time
       time <- get lastFrame
       lastFrame $= currentFrame
@@ -108,7 +108,7 @@ loop = do
     renderCursor
     renderEntitities
 
-    liftIO $ do
+    liftIO $ {-# SCC "bufferSwap" #-}  do
       size <- get windowSize
       viewport $= ( Position 0 0, size )
       swapBuffers

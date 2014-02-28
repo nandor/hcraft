@@ -9,7 +9,7 @@ import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Data.IORef
 import           Data.Fixed
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Vector.Mutable as Vector
 import           Graphics.Rendering.OpenGL
 import           HCraft.Engine

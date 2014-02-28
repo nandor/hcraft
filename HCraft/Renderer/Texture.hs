@@ -9,7 +9,7 @@ module HCraft.Renderer.Texture
 import           Control.Monad hiding (forM_)
 import           Control.Monad.Error hiding (forM_)
 import           Control.Monad.Reader hiding (forM_)
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HashMap
 import           Data.Foldable (forM_)
 import           Foreign hiding (void)
 import           Graphics.UI.GLFW
@@ -114,7 +114,7 @@ buildTexture TexDesc{..} = do
   EngineState{ esTextures } <- ask
   liftIO $ get esTextures >>= \cache ->
     let obj = TexObject tex tdType tdFmt tdResize
-    in esTextures $= Map.insert tdName obj cache
+    in esTextures $= HashMap.insert tdName obj cache
 
 -- |Binds a texture to the given uniform
 bindTexture :: Int -> String -> String -> Engine ()
@@ -123,7 +123,7 @@ bindTexture idx name unif = do
 
   let unit = TextureUnit (fromIntegral idx)
 
-  liftIO $ get esTextures >>= \x -> case Map.lookup name x of
+  liftIO $ get esTextures >>= \x -> case HashMap.lookup name x of
     Nothing -> fail $ "Texture not found: '" ++ name ++ "'"
     Just TexObject{..} -> do
       activeTexture $= unit

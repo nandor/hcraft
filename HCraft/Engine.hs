@@ -10,7 +10,7 @@ import Control.Monad
 import Control.Monad.Error
 import Control.Monad.Reader
 import Data.IORef
-import Data.Map (Map)
+import Data.HashMap.Strict (HashMap)
 import Data.Vector.Mutable (IOVector)
 import Graphics.Rendering.OpenGL
 import HCraft.Renderer.Texture.Texture
@@ -24,16 +24,16 @@ import HCraft.Math
 data EngineState
   = EngineState { esRunning    :: IORef Bool
                 , esSize       :: IORef Size
-                , esTextures   :: IORef (Map String TexObject)
-                , esMeshes     :: IORef (Map String MeshObject)
-                , esPrograms   :: IORef (Map String ProgObject)
+                , esTextures   :: IORef (HashMap String TexObject)
+                , esMeshes     :: IORef (HashMap String MeshObject)
+                , esPrograms   :: IORef (HashMap String ProgObject)
                 , esProgram    :: IORef (Maybe ProgObject)
                 , esDfrFBO     :: IORef (Maybe FramebufferObject)
                 , esFxFBO      :: IORef (Maybe FramebufferObject)
                 , esShadowFBO  :: IORef (Maybe FramebufferObject)
                 , esCamera     :: IORef Camera
-                -- | Chunk Map. Keys: bottom left front corners of chunk bounding box in global chunk space
-                , esChunks     :: IORef (Map (Vec3 GLint) (IORef Chunk))
+                -- | Chunk HashMap. Keys: bottom left front corners of chunk bounding box in global chunk space
+                , esChunks     :: IORef (HashMap (Vec3 Int) (IORef Chunk))
                 , esCursor     :: IORef (Maybe ( Vec3 Int, Vec3 Int ))
                 , esCount      :: IORef Int
                 }

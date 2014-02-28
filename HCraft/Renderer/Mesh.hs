@@ -8,7 +8,7 @@ module HCraft.Renderer.Mesh
 import           Control.Monad
 import           Control.Monad.Error
 import           Control.Monad.Reader
-import qualified Data.Map as Map
+import qualified Data.HashMap.Strict as HashMap
 import           Foreign
 import           Graphics.Rendering.OpenGL
 import           System.FilePath
@@ -54,7 +54,7 @@ buildMesh MeshDesc{..} = do
   EngineState{..} <- ask
   liftIO $ get esMeshes >>= \cache ->
     let obj = MeshObject vao vbo len mdType
-    in esMeshes $= Map.insert mdName obj cache
+    in esMeshes $= HashMap.insert mdName obj cache
 
 
 -- |Renders a mesh from the cache
@@ -62,7 +62,7 @@ renderMesh :: String -> Engine ()
 renderMesh name = do
   EngineState{..} <- ask
 
-  liftIO $ get esMeshes >>= \cache -> case Map.lookup name cache of
+  liftIO $ get esMeshes >>= \cache -> case HashMap.lookup name cache of
     Nothing -> fail $ "Mesh not found '" ++ name ++ "'"
     Just MeshObject{..} -> do
       bindVertexArrayObject $= Just moVAO

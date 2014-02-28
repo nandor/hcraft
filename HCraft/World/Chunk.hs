@@ -18,8 +18,9 @@ import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Data.IORef
 import           Data.Maybe
-import qualified Data.Map as Map
-import qualified Data.Vector.Mutable as Vector
+import qualified Data.HashMap.Strict as HashMap
+import           Data.Vector.Storable.Mutable (IOVector)
+import qualified Data.Vector.Storable.Mutable as Vector
 import           Debug.Trace
 import           Foreign
 import           Graphics.Rendering.OpenGL
@@ -55,7 +56,7 @@ getChunk pos@(Vec3 cx cy cz) = do
   EngineState{..} <- ask
   chunks <- liftIO $ get esChunks
 
-  liftIO $ case Map.lookup pos chunks of
+  liftIO $ case HashMap.lookup (fromIntegral <$> pos) chunks of
     Nothing -> do
       count <- get esCount
       if count < 2
@@ -71,7 +72,7 @@ getChunk pos@(Vec3 cx cy cz) = do
 
           -- Fill in the chunk with random data
           vec' <- forM coords $ \(Vec3 x y z) -> do
-            let block = 1 -- noiseGetBlock (cx * chunkSize + x) (cy * chunkSize + y) (cz * chunkSize + z)
+            let block = noiseGetBlock (cx * chunkSize + x) (cy * chunkSize + y) (cz * chunkSize + z)
                 idx = fromIntegral $ ((x * chunkSize) + y) * chunkSize + z
             liftIO $ Vector.write vec idx block
             return block
@@ -95,35 +96,65 @@ getChunk pos@(Vec3 cx cy cz) = do
                          <*> pure (mat4Trans $ (*chunkSize) . fromIntegral <$> pos)
 
           ref <- newIORef chunk
-          esChunks $= Map.insert pos ref chunks
+          esChunks $= HashMap.insert (fromIntegral <$> pos) ref chunks
           return (Just chunk)
         else
           return Nothing
-
     Just x -> Just <$> get x
 
 -- |Builds the mesh for a chunk
-buildChunk :: Chunk -> Engine [ GLuint ]
-buildChunk Chunk{..} = do
+buildChunk :: Chunk -> Engine (IOVector GLuint, GLsizeiptr )
+buildChunk Chunk{..} = liftIO $ do
   let Vec3 cx cy cz = (*chunkSize) <$> chPosition
-  arr <- {-# SCC "block_loop" #-} forM coords $ \(Vec3 x y z ) -> do -- coord of each block in the chunk
+      maxSize = (chunkSize ^ 3) * 36
+      foldM' coords counter func = foldM func counter coords
+
+  arr <- Vector.new maxSize
+
+  len <- {-# SCC "chunk_loop" #-} liftIO $
+    foldM' coords 0 $ \len (Vec3 x y z ) -> do -- coord of each block in the chunk
     let idx = (x * chunkSize + y) * chunkSize + z
         pos = Vec3 (cx + x) (cy + y) (cz + z)
 
+        inChunk (Vec3 x y z)
+          = cx <= x && x < cx + chunkSize &&
+            cy <= y && y < cy + chunkSize &&
+            cz <= z && z < cz + chunkSize
+
     -- Check whether the block is visible
-    block <- liftIO $ Vector.read chBlocks (fromIntegral idx)
+    block <- Vector.unsafeRead chBlocks (fromIntegral idx)
     case block of
-      0 -> return []
+      0 -> return len
       _ -> do
         -- Cull faces if neighbours occlude them
-        mesh <- {-# SCC "neighbour_loop" #-} forM (zip (neighbours pos) [0..5]) $ \( pos' , f ) -> do
-          let mesh = (idx * 6 + f) * 4
-          block <- getBlock pos'
-          return $ case block of
-            Nothing -> map (\i -> fromIntegral (mesh + i)) [0, 1, 2, 2, 1, 3]
-            Just block -> []
-        return (concat mesh)
-  return (concat arr)
+        len' <- {-# SCC "neighbour_loop" #-}
+          foldM' (zip (neighbours pos) [0..5]) len $ \len ( pos' , f ) -> do
+          block <-
+            if inChunk pos'
+              then let Vec3 x' y' z' = pos'
+                       idx' = ((x' - cx) * chunkSize + (y' - cy)) * chunkSize + (z' - cz)
+                   in do
+                    block <- Vector.unsafeRead chBlocks (fromIntegral idx')
+                    return (if block == 0 then Nothing else Just block)
+              else do
+                return Nothing
+
+          let mesh = fromIntegral $ (idx * 6 + f) * 4
+
+          case block of
+            Just _ -> do
+              return len
+            Nothing -> do
+              Vector.unsafeWrite arr (len + 0) (mesh + 0)
+              Vector.unsafeWrite arr (len + 1) (mesh + 1)
+              Vector.unsafeWrite arr (len + 2) (mesh + 2)
+              Vector.unsafeWrite arr (len + 3) (mesh + 2)
+              Vector.unsafeWrite arr (len + 4) (mesh + 1)
+              Vector.unsafeWrite arr (len + 5) (mesh + 3)
+              return $ len + 6
+        return len'
+
+  return ( arr, fromIntegral len )
 
 -- |Renders a chunk
 renderChunk :: Chunk -> Engine ()
@@ -181,7 +212,7 @@ renderChunk chunk@Chunk{..} = do
         -- Vertex data
         liftIO $ do
           bindVertexArrayObject $= Just vao
-          get esMeshes >>= \cache -> case Map.lookup "chunkMesh" cache of
+          get esMeshes >>= \cache -> case HashMap.lookup "chunkMesh" cache of
             Nothing -> fail "Mesh not found 'chunkMesh'"
             Just MeshObject{..} ->
               bindBuffer ArrayBuffer $= Just moVBO
@@ -198,19 +229,17 @@ renderChunk chunk@Chunk{..} = do
           vertexAttribPointer (AttribLocation 2) $=
             ( ToFloat, VertexArrayDescriptor 2 Float 32 (intPtrToPtr 24) )
 
-        indices <- buildChunk chunk
+        ( indices, len ) <- buildChunk chunk
 
         -- Index data
         liftIO $ do
           bindBuffer ElementArrayBuffer $= Just ibo
 
-          len <- withArrayLen indices $ \len ptr -> do
-            let len' = fromIntegral len
-            bufferData ElementArrayBuffer $= ( len' * 4, ptr, StreamDraw )
-            return (fromIntegral len)
+          Vector.unsafeWith indices $ \ptr -> do
+            bufferData ElementArrayBuffer $= ( len * 4, ptr, StaticDraw )
 
-          chMesh $= Just (ChunkMesh vao ibo len)
-          drawElements Triangles len UnsignedInt nullPtr
+          chMesh $= Just (ChunkMesh vao ibo (fromIntegral len))
+          drawElements Triangles (fromIntegral len) UnsignedInt nullPtr
           endConditionalRender
 
 
@@ -231,6 +260,7 @@ occludeChunk Chunk{..} = do
   liftIO $ endQuery AnySamplesPassed
 
 -- |Retrieves a block
+{-# INLINE getBlock #-}
 getBlock :: Vec3 GLint -> Engine (Maybe Int)
 getBlock pos = do
   EngineState{..} <- ask
@@ -241,7 +271,7 @@ getBlock pos = do
       Vec3 x y z = snd <$> cdiv
       idx = fromIntegral $ (x * chunkSize + y) * chunkSize + z
 
-  case Map.lookup cpos chunks of
+  case HashMap.lookup cpos chunks of
     Nothing -> return Nothing
     Just ref -> do
       Chunk{..} <- liftIO $ get ref
@@ -268,7 +298,7 @@ placeBlock = do
         tpos = TexturePosition3D z y x
         tsize = TextureSize3D 1 1 1
 
-    case Map.lookup cpos chunks of
+    case HashMap.lookup cpos chunks of
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref
@@ -297,7 +327,7 @@ deleteBlock = do
         tsize = TextureSize3D 1 1 1
         tpos = TexturePosition3D z y x
 
-    case Map.lookup cpos chunks of
+    case HashMap.lookup cpos chunks of
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref

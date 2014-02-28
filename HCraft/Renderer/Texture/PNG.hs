@@ -116,7 +116,7 @@ readPNG path = liftIO $ do
       fail "Invalid signature"
 
   -- Create the png read struct
-  png <- withCString "1.2.49" $ \ver ->
+  png <- withCString "1.6.9" $ \ver ->
     pngCreateReadStruct ver nullPtr nullFunPtr nullFunPtr
   when (ptrPNG png == nullPtr) $ do
      fclose file

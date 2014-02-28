@@ -1,6 +1,6 @@
 module HCraft.Renderer.Program.Program where
 
-import Data.Map (Map)
+import Data.HashMap.Strict (HashMap)
 import Graphics.Rendering.OpenGL
 
 -- |Program source information
@@ -13,10 +13,10 @@ data ProgDesc
 -- |Represents an OpenGL program
 data ProgObject
   = ProgObject { poHandle   :: Program
-               , poUniforms :: Map String UniformLocation
-               , poAttribs  :: Map String AttribLocation
+               , poUniforms :: HashMap String UniformLocation
+               , poAttribs  :: HashMap String AttribLocation
                }
-  deriving ( Eq, Ord, Show)
+  deriving ( Eq, Show)
 
 -- |List of builtin programs
 progBuiltin :: [ ProgDesc ]

@@ -13,8 +13,8 @@ import           Control.Monad.Reader
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import           Data.List
-import           Data.Map (Map)
-import qualified Data.Map as Map
+import           Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HashMap
 import           Foreign
 import           Graphics.Rendering.OpenGL
 import           Graphics.Rendering.OpenGL.Raw
@@ -98,14 +98,14 @@ buildProgram ProgDesc{..} = do
   -- Put shader into cache
   EngineState{..} <- ask
   liftIO $ get esPrograms >>= \cache ->
-    let obj = ProgObject prog (Map.fromList unifs) (Map.fromList attribs)
-    in esPrograms $= Map.insert pdName obj cache
+    let obj = ProgObject prog (HashMap.fromList unifs) (HashMap.fromList attribs)
+    in esPrograms $= HashMap.insert pdName obj cache
 
 -- | Binds a program to the OpenGL state
 bindProgram :: String -> Engine ()
 bindProgram name = do
   EngineState{..} <- ask
-  liftIO $ get esPrograms >>= \x -> case Map.lookup name x of
+  liftIO $ get esPrograms >>= \x -> case HashMap.lookup name x of
     Nothing -> fail $ "Program not found: '" ++ name ++ "'"
     Just prog@ProgObject{..} -> do
       currentProgram $= Just poHandle
@@ -119,7 +119,7 @@ parameter name val = do
   liftIO $ get esProgram >>= \x -> case x of
     Nothing -> fail "No program bound"
     Just ProgObject{..}  ->
-      case Map.lookup name poUniforms of
+      case HashMap.lookup name poUniforms of
         Nothing -> return ()
         Just u ->
           uniform u $= val
@@ -131,7 +131,7 @@ parameterv name val = do
   liftIO $ get esProgram >>= \x -> case x of
     Nothing -> fail "No program bound"
     Just ProgObject{..}  ->
-      case Map.lookup name poUniforms of
+      case HashMap.lookup name poUniforms of
         Nothing -> return ()
         Just (UniformLocation u) ->
           withArray (lfromm val) $ \ptr ->
