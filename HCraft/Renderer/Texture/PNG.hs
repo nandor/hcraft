@@ -27,70 +27,70 @@ newtype PNGInfo
 type PNGError
   = FunPtr (PNG -> Ptr CChar -> IO ())
 
-foreign import ccall safe "stdio.h fopen"
+foreign import ccall unsafe "stdio.h fopen"
   fopen :: CString -> CString -> IO (Ptr CFile)
 
-foreign import ccall safe "stdio.h fread"
+foreign import ccall unsafe "stdio.h fread"
   fread :: Ptr a -> CSize -> CSize -> Ptr CFile -> IO CSize
 
-foreign import ccall safe "stdio.h fclose"
+foreign import ccall unsafe "stdio.h fclose"
   fclose :: Ptr CFile -> IO ()
 
-foreign import ccall safe "png.h png_sig_cmp"
+foreign import ccall unsafe "png.h png_sig_cmp"
   pngSigCmp :: Ptr CUChar -> CSize -> CSize -> CInt
 
-foreign import ccall safe "png.h png_create_read_struct"
+foreign import ccall unsafe "png.h png_create_read_struct"
   pngCreateReadStruct :: Ptr CChar -> Ptr a -> PNGError -> PNGError -> IO PNG
 
-foreign import ccall safe "png.h png_create_info_struct"
+foreign import ccall unsafe "png.h png_create_info_struct"
   pngCreateInfoStruct :: PNG -> IO PNGInfo
 
-foreign import ccall safe "png.h png_init_io"
+foreign import ccall unsafe "png.h png_init_io"
   pngInitIO :: PNG -> Ptr CFile -> IO ()
 
-foreign import ccall safe "png.h png_set_sig_bytes"
+foreign import ccall unsafe "png.h png_set_sig_bytes"
   pngSetSigBytes :: PNG -> CInt -> IO ()
 
-foreign import ccall safe "png.h png_read_info"
+foreign import ccall unsafe "png.h png_read_info"
   pngReadInfo :: PNG -> PNGInfo -> IO ()
 
-foreign import ccall safe "png.h png_get_image_width"
+foreign import ccall unsafe "png.h png_get_image_width"
   pngGetImageWidth :: PNG -> PNGInfo -> IO CUInt
 
-foreign import ccall safe "png.h png_get_image_height"
+foreign import ccall unsafe "png.h png_get_image_height"
   pngGetImageHeight :: PNG -> PNGInfo -> IO CUInt
 
-foreign import ccall safe "png.h png_get_bit_depth"
+foreign import ccall unsafe "png.h png_get_bit_depth"
   pngGetBitDepth :: PNG -> PNGInfo -> IO CUChar
 
-foreign import ccall safe "png.h png_get_rowbytes"
+foreign import ccall unsafe "png.h png_get_rowbytes"
   pngGetRowBytes :: PNG -> PNGInfo -> IO CUInt
 
-foreign import ccall safe "png.h png_get_color_type"
+foreign import ccall unsafe "png.h png_get_color_type"
   pngGetColorType :: PNG -> PNGInfo -> IO CUChar
 
-foreign import ccall safe "png.h png_get_valid"
+foreign import ccall unsafe "png.h png_get_valid"
   pngGetValid :: PNG -> PNGInfo -> CUInt -> IO CUInt
 
-foreign import ccall safe "png.h png_set_expand_gray_1_2_4_to_8"
+foreign import ccall unsafe "png.h png_set_expand_gray_1_2_4_to_8"
   pngSetExpandGray124to8 :: PNG -> IO ()
 
-foreign import ccall safe "png.h png_set_palette_to_rgb"
+foreign import ccall unsafe "png.h png_set_palette_to_rgb"
   pngSetPaletteToRGB :: PNG -> IO ()
 
-foreign import ccall safe "png.h png_set_strip_16"
+foreign import ccall unsafe "png.h png_set_strip_16"
   pngSetStrip16 :: PNG -> IO ()
 
-foreign import ccall safe "png.h png_read_update_info"
+foreign import ccall unsafe "png.h png_read_update_info"
   pngReadUpdateInfo :: PNG -> PNGInfo -> IO ()
 
-foreign import ccall safe "png.h png_read_image"
+foreign import ccall unsafe "png.h png_read_image"
   pngReadImage :: PNG -> Ptr (Ptr CUChar) -> IO ()
 
-foreign import ccall safe "png.h png_destroy_read_struct"
+foreign import ccall unsafe "png.h png_destroy_read_struct"
   pngDestroyReadStruct :: Ptr PNG -> Ptr PNGInfo -> Ptr PNGInfo -> IO ()
 
-foreign import ccall safe "png.h png_read_end"
+foreign import ccall unsafe "png.h png_read_end"
   pngReadEnd :: PNG -> PNGInfo -> IO ()
 
 -- |Read a PNG image from a file
