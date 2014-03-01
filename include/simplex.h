@@ -1,3 +1,4 @@
+/*******************************************************************************
 The MIT License (MIT)
 
 Copyright (c) 2013 Nandor Licker
@@ -19,3 +20,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+*******************************************************************************/
+#ifndef __HCRAFT_SIMPLE_H__
+#define __HCRAFT_SIMPLE_H__
+
+/* Returns the noise value for a 3d coordinate */
+float simplexNoise(float, float, float);
+
+#endif
