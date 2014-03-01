@@ -31,9 +31,9 @@ renderCursor = do
 
       bindProgram "object"
       bindTexture 0 "cursor" "u_diffuse"
-      parameterv "u_proj" cProjMat
-      parameterv "u_view" cViewMat
-      parameterv "u_mdl" $ mat4Trans (fromIntegral <$> pos)
+      parameterm "u_proj" cProjMat
+      parameterm "u_view" cViewMat
+      parameterm "u_mdl" $ mat4Trans (fromIntegral <$> pos)
       renderMesh "cursor"
 
       liftIO $ blend $= Disabled

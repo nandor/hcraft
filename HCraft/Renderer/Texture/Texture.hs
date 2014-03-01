@@ -89,6 +89,12 @@ textureBuiltin
       , Left "texture/stone.png"
       , Left "texture/stone.png"
       , Left "texture/stone.png"
+      , Left "texture/bedrock.png"
+      , Left "texture/bedrock.png"
+      , Left "texture/bedrock.png"
+      , Left "texture/bedrock.png"
+      , Left "texture/bedrock.png"
+      , Left "texture/bedrock.png"
       ]
     ]
 

@@ -124,7 +124,7 @@ buildChunk Chunk{..} = liftIO $ do
     -- Check whether the block is visible
     block <- Vector.unsafeRead chBlocks (fromIntegral idx)
     case block of
-      0 -> return len
+      Empty -> return len
       _ -> do
         -- Cull faces if neighbours occlude them
         len' <- {-# SCC "neighbour_loop" #-}
@@ -135,8 +135,11 @@ buildChunk Chunk{..} = liftIO $ do
                        idx' = ((x' - cx) * chunkSize + (y' - cy)) * chunkSize + (z' - cz)
                    in do
                     block <- Vector.unsafeRead chBlocks (fromIntegral idx')
-                    return (if block == 0 then Nothing else Just block)
+                    return $ case block of
+                      Empty -> Nothing
+                      _ -> Just block
               else do
+                -- TODO: look block up in neighbouring chunks
                 return Nothing
 
           let mesh = fromIntegral $ (idx * 6 + f) * 4
@@ -193,7 +196,7 @@ renderChunk chunk@Chunk{..} = do
     unless inCamera . liftIO $
       beginConditionalRender (fromJust query) QueryWait
 
-    parameterv "u_mdl" chModel
+    parameterm "u_mdl" chModel
     parameter "u_blocks" (TextureUnit 1)
 
     liftIO $ do
@@ -255,13 +258,13 @@ occludeChunk Chunk{..} = do
       return obj
 
   liftIO $ beginQuery AnySamplesPassed object
-  parameterv "u_mdl" chModel
+  parameterm "u_mdl" chModel
   renderMesh "chunkOccluder"
   liftIO $ endQuery AnySamplesPassed
 
 -- |Retrieves a block
 {-# INLINE getBlock #-}
-getBlock :: Vec3 GLint -> Engine (Maybe Int)
+getBlock :: Vec3 GLint -> Engine (Maybe Block)
 getBlock pos = do
   EngineState{..} <- ask
   chunks <- liftIO $ get esChunks
@@ -277,7 +280,7 @@ getBlock pos = do
       Chunk{..} <- liftIO $ get ref
       block <- liftIO $ Vector.read chBlocks idx
       return $ case block of
-        0 -> Nothing
+        Empty -> Nothing
         x -> Just x
 
 -- |Places a block on the cursor
@@ -302,7 +305,7 @@ placeBlock = do
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref
-        Vector.write chBlocks idx 2
+        Vector.write chBlocks idx Stone
 
         textureBinding Texture3D $= Just chBlockTex
         withArray [2 :: Int ] $ \ptr -> do
@@ -331,7 +334,7 @@ deleteBlock = do
       Nothing -> return ()
       Just ref -> liftIO $ do
         Chunk{..} <- liftIO $ get ref
-        Vector.write chBlocks idx 0
+        Vector.write chBlocks idx Empty
 
         textureBinding Texture3D $= Just chBlockTex
         withArray [0 :: Int] $ \ptr -> do

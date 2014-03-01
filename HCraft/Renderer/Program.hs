@@ -4,6 +4,7 @@ module HCraft.Renderer.Program
   , buildProgram
   , bindProgram
   , parameter
+  , parameterm
   , parameterv
   ) where
 
@@ -125,8 +126,8 @@ parameter name val = do
           uniform u $= val
 
 -- | Sets the value of a uniform matrix
-parameterv :: String -> Mat4 GLfloat -> Engine ()
-parameterv name val = do
+parameterm :: String -> Mat4 GLfloat -> Engine ()
+parameterm name val = do
   EngineState {..} <- ask
   liftIO $ get esProgram >>= \x -> case x of
     Nothing -> fail "No program bound"
@@ -136,3 +137,16 @@ parameterv name val = do
         Just (UniformLocation u) ->
           withArray (lfromm val) $ \ptr ->
             glUniformMatrix4fv u 1 0 ptr
+
+-- | Sets the value of a uniform vector
+parameterv :: String -> Vec3 GLfloat -> Engine ()
+parameterv name val = do
+  EngineState {..} <- ask
+  liftIO $ get esProgram >>= \x -> case x of
+    Nothing -> fail "No program bound"
+    Just ProgObject{..}  ->
+      case HashMap.lookup name poUniforms of
+        Nothing -> return ()
+        Just (UniformLocation u) ->
+          withArray (lfromv val) $ \ptr ->
+            glUniform3fv u 1 ptr

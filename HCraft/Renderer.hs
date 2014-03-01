@@ -35,8 +35,8 @@ renderSky = do
 
   bindProgram "sky"
   bindTexture 1 "sky" "u_diffuse"
-  parameterv "u_proj" cProjMat
-  parameterv "u_view" cSkyMat
+  parameterm "u_proj" cProjMat
+  parameterm "u_view" cSkyMat
   renderMesh "skybox"
 
   liftIO $ clear [ DepthBuffer ]
@@ -74,8 +74,9 @@ renderChunks pos@(Vec3 x y z) = do
   -- Chunks which are definitely invisible (a previous occlusion query on them
   -- failed) are not rendered.
   bindProgram "terrain"
-  parameterv "u_proj" cProjMat
-  parameterv "u_view" cViewMat
+  parameterm "u_proj" cProjMat
+  parameterm "u_view" cViewMat
+  parameterv "u_pos" cPosition
   mapM_ renderChunk chunks
 
   -- Perform occlusion queries on all the chunks to find out which ones are
@@ -87,8 +88,8 @@ renderChunks pos@(Vec3 x y z) = do
     cullFace $= Nothing
 
   bindProgram "depth"
-  parameterv "u_proj" cProjMat
-  parameterv "u_view" cViewMat
+  parameterm "u_proj" cProjMat
+  parameterm "u_view" cViewMat
   mapM_ occludeChunk chunks
 
   liftIO $ do

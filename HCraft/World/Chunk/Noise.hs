@@ -11,6 +11,7 @@ import           Foreign.C.Types
 import           Graphics.Rendering.OpenGL
 import           System.Random
 import           HCraft.Engine
+import           HCraft.World.Chunk.Chunk
 
 -- |Gradient vectors
 grad :: Vector ( GLfloat, GLfloat, GLfloat )
@@ -49,10 +50,11 @@ foreign import ccall unsafe "simplex.h simplexNoise"
   simplexNoise :: CFloat -> CFloat -> CFloat -> CFloat
 
 -- |Decides which block to place based on a given noise value
-noiseGetBlock :: GLint -> GLint -> GLint -> Int
+noiseGetBlock :: GLint -> GLint -> GLint -> Block
 noiseGetBlock x y z
-  | noise < 0.5 = 0
-  | otherwise = 1
+  | y == 0      = Bedrock
+  | noise < 0.5 = Empty
+  | otherwise   = Grass
   where
     noise = simplexNoise x' y' z'
     x' = fromIntegral x / 20

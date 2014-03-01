@@ -32,5 +32,5 @@ executable hcraft
                      , StateVar             >= 1.0
                      , unordered-containers >= 0.2
                      , hashable             >= 1.2
-  extra-libraries:   png
+  extra-libraries:   png12
   ghc-options:       -O2 -funbox-strict-fields -fprof-auto -rtsopts
