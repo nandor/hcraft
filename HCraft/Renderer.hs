@@ -61,7 +61,7 @@ renderChunks pos@(Vec3 x y z) = do
 
   let volume = getCameraVolume camera
       boxMin = Vec3 (x - 0) 0 (z - 0)
-      boxMax = Vec3 (x + 4) 4 (z + 4)
+      boxMax = Vec3 (x + 8) 4 (z + 8)
 
   -- The number of new chunks built each second is limited
   liftIO $ esCount $= 0

@@ -25,7 +25,7 @@ executable hcraft
                      , OpenGL               >= 2.9
                      , OpenGLRaw            >= 1.4
                      , monad-loops          >= 0.4
-                     , mtl                  >= 2.1.2
+                     , mtl                  >= 2.1.1
                      , filepath             >= 1.3
                      , random               >= 1.0
                      , vector               >= 0.10
